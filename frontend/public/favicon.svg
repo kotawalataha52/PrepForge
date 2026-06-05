@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="neonGlowIcon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0ff" />
+      <stop offset="100%" stop-color="#8a2be2" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Outer Ring (Chat Bubble abstraction) -->
+  <circle cx="50" cy="50" r="45" fill="none" stroke="url(#neonGlowIcon)" stroke-width="8"/>
+  <path d="M 20,80 L 10,95 L 25,85" stroke="url(#neonGlowIcon)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  
+  <!-- Flame Core -->
+  <path d="M 50,25 C 30,50 35,70 50,70 C 65,70 70,50 50,25 Z" fill="url(#neonGlowIcon)"/>
+</svg>

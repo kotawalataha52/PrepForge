@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="neonGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0ff" />
+      <stop offset="50%" stop-color="#00f0ff" />
+      <stop offset="100%" stop-color="#8a2be2" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <g filter="url(#glow)">
+    <!-- Chat Bubble / Forge Base -->
+    <path d="M 15,30 C 15,15 30,15 50,15 C 70,15 85,15 85,30 C 85,55 70,70 50,70 C 40,70 30,68 25,75 C 22,79 18,74 20,68 C 17,60 15,45 15,30 Z" 
+          fill="none" stroke="url(#neonGlow)" stroke-width="4" stroke-linejoin="round"/>
+          
+    <!-- Flame / Brain Inner Core -->
+    <path d="M 50,25 C 40,35 35,45 35,55 C 35,62 42,65 50,65 C 58,65 65,62 65,55 C 65,45 60,35 50,25 Z" 
+          fill="url(#neonGlow)" opacity="0.8"/>
+          
+    <!-- Neuro-Lines (Brain Detail) -->
+    <path d="M 50,30 L 45,45 L 35,50 M 50,30 L 55,45 L 65,50 M 50,45 L 50,65" 
+          stroke="#0B0F19" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
