@@ -51,21 +51,29 @@ Respond with ONLY this JSON (no markdown, no explanation, no code fences):
         baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/'
       });
 
-      const completion = await gemini.chat.completions.create({
-        model: 'gemini-3.7-flash',
-        messages: [
-          {
-            role: 'system',
-            content: systemPrompt
-          },
-          {
-            role: 'user',
-            content: `Analyze the resume above for the role "${targetRole}". Return ONLY the raw JSON. Be specific to THIS resume.`
-          }
-        ],
-        temperature: 0.4,
-        max_tokens: 1200
-      });
+      // Race the API call against a 20-second timeout to prevent infinite hangs
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Gemini API timed out after 20 seconds')), 20000)
+      );
+
+      const completion = await Promise.race([
+        gemini.chat.completions.create({
+          model: 'gemini-3.7-flash',
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt
+            },
+            {
+              role: 'user',
+              content: `Analyze the resume above for the role "${targetRole}". Return ONLY the raw JSON. Be specific to THIS resume.`
+            }
+          ],
+          temperature: 0.4,
+          max_tokens: 1200
+        }),
+        timeoutPromise
+      ]);
 
       const rawContent = completion.choices[0].message.content.trim();
       // Strip any accidental markdown code fences

@@ -75,21 +75,27 @@ exports.finishInterview = async (req, res) => {
         apiKey: process.env.GEMINI_API_KEY,
         baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/'
       });
-      const completion = await gemini.chat.completions.create({
-        model: 'gemini-3.7-flash',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert AI Interview grader. You must respond with ONLY a valid JSON object, no markdown, no extra text.'
-          },
-          {
-            role: 'user',
-            content: `Evaluate the following interview transcript for a ${role || 'candidate'}.\n\n${formattedTranscript}\n\nRespond EXACTLY in this JSON format: {"score": <number 0-100>, "feedback": "<1-paragraph string summarizing their performance>"}`
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 500
-      });
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Gemini API timed out after 20 seconds')), 20000)
+      );
+      const completion = await Promise.race([
+        gemini.chat.completions.create({
+          model: 'gemini-3.7-flash',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert AI Interview grader. You must respond with ONLY a valid JSON object, no markdown, no extra text.'
+            },
+            {
+              role: 'user',
+              content: `Evaluate the following interview transcript for a ${role || 'candidate'}.\n\n${formattedTranscript}\n\nRespond EXACTLY in this JSON format: {"score": <number 0-100>, "feedback": "<1-paragraph string summarizing their performance>"}`
+            }
+          ],
+          temperature: 0.3,
+          max_tokens: 500
+        }),
+        timeoutPromise
+      ]);
 
       const rawContent = completion.choices[0].message.content.trim();
       // Strip any accidental markdown code fences

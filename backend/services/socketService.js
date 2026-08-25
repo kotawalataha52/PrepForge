@@ -67,15 +67,22 @@ const getGeminiResponse = async (userMessage, systemContext, isFirstMessage = fa
       baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/'
     });
 
-    const completion = await gemini.chat.completions.create({
-      model: 'gemini-3.7-flash',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Candidate says: "${userMessage}"\nRespond naturally as the critical interviewer in 3 sentences max.` }
-      ],
-      temperature: 0.7,
-      max_tokens: 300
-    });
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Gemini API timed out after 15 seconds')), 15000)
+    );
+
+    const completion = await Promise.race([
+      gemini.chat.completions.create({
+        model: 'gemini-3.7-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Candidate says: "${userMessage}"\nRespond naturally as the critical interviewer in 3 sentences max.` }
+        ],
+        temperature: 0.7,
+        max_tokens: 300
+      }),
+      timeoutPromise
+    ]);
 
     return completion.choices[0].message.content;
 
