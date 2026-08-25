@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, Bot, Target, Zap, Clock, ShieldCheck, PlayCircle, BarChart3, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { motion, useScroll, useTransform } from 'framer-motion';
 
 const fadeIn = {
   hidden: { opacity: 0, y: 30 },

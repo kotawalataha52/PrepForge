@@ -38,7 +38,7 @@ const initSocket = (server) => {
 
         const context = activeInterviewContexts.get(interviewId) || "You are a generic software engineering interviewer. Keep responses to 2 sentences max.";
 
-        const botResponse = await getGroqResponse(message, context, messageCount === 1);
+        const botResponse = await getGeminiResponse(message, context, messageCount === 1);
 
         io.to(interviewId).emit('bot_typing', { isTyping: false });
         io.to(interviewId).emit('new_message', { sender: 'bot', text: botResponse });
@@ -46,7 +46,7 @@ const initSocket = (server) => {
       } catch (error) {
         console.error('Bot Error:', error);
         io.to(interviewId).emit('bot_typing', { isTyping: false });
-        io.to(interviewId).emit('new_message', { sender: 'bot', text: 'I encountered an error connecting to the AI. Please check your Groq API key.' });
+        io.to(interviewId).emit('new_message', { sender: 'bot', text: 'I encountered an error connecting to the AI. Please check your Gemini API key.' });
       }
     });
 
@@ -56,19 +56,19 @@ const initSocket = (server) => {
   });
 };
 
-// Function to call Groq Cloud API (free, fast, same llama3 model)
-const getGroqResponse = async (userMessage, systemContext, isFirstMessage = false) => {
+// Function to call Gemini API (free, fast)
+const getGeminiResponse = async (userMessage, systemContext, isFirstMessage = false) => {
   try {
     let systemPrompt = systemContext;
 
-    // Create Groq client inline (dotenv is already loaded at this point)
-    const groq = new OpenAI({
-      apiKey: process.env.GROQ_API_KEY,
-      baseURL: 'https://api.groq.com/openai/v1'
+    // Create Gemini client inline (dotenv is already loaded at this point)
+    const gemini = new OpenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/'
     });
 
-    const completion = await groq.chat.completions.create({
-      model: 'llama-3.1-8b-instant',
+    const completion = await gemini.chat.completions.create({
+      model: 'gemini-3.7-flash',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `Candidate says: "${userMessage}"\nRespond naturally as the critical interviewer in 3 sentences max.` }
@@ -80,12 +80,12 @@ const getGroqResponse = async (userMessage, systemContext, isFirstMessage = fals
     return completion.choices[0].message.content;
 
   } catch (err) {
-    console.warn('Groq API unavailable, falling back to mock response:', err.message);
+    console.warn('Gemini API unavailable, falling back to mock response:', err.message);
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     if (isFirstMessage) {
       const contextSnip = systemContext.includes("resume states") ? "I see your resume here!" : "";
-      return `[Mock Mode - Groq Offline] ${contextSnip} Let's dive in. Can you elaborate on the core technical tradeoffs of your approach?`;
+      return `[Mock Mode - Gemini Offline] ${contextSnip} Let's dive in. Can you elaborate on the core technical tradeoffs of your approach?`;
     } else {
       return `That's an interesting approach to "${userMessage}". Could you dive a bit deeper into the why behind that decision?`;
     }

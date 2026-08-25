@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { UploadCloud, FileText, Loader2, AlertCircle, ScanLine, Target, LayoutList, ChevronRight } from 'lucide-react';
 import api from '../utils/api';
 

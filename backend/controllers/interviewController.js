@@ -66,17 +66,17 @@ exports.finishInterview = async (req, res) => {
     const formattedTranscript = transcript.map(t => `${t.sender.toUpperCase()}: ${t.text}`).join('\n');
 
     let score = 0;
-    let feedback = 'Fallback feedback — Groq API was unavailable. You did well!';
+    let feedback = 'Fallback feedback — Gemini API was unavailable. You did well!';
 
     try {
-      // Call Groq Cloud API to grade the interview via chat completions
-      // Create Groq client inline (dotenv is already loaded at call time)
-      const groq = new OpenAI({
-        apiKey: process.env.GROQ_API_KEY,
-        baseURL: 'https://api.groq.com/openai/v1'
+      // Call Gemini API to grade the interview via chat completions
+      // Create Gemini client inline (dotenv is already loaded at call time)
+      const gemini = new OpenAI({
+        apiKey: process.env.GEMINI_API_KEY,
+        baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/'
       });
-      const completion = await groq.chat.completions.create({
-        model: 'llama-3.1-8b-instant',
+      const completion = await gemini.chat.completions.create({
+        model: 'gemini-3.7-flash',
         messages: [
           {
             role: 'system',
@@ -99,10 +99,10 @@ exports.finishInterview = async (req, res) => {
       score = parsed.score || 50;
       feedback = parsed.feedback || feedback;
 
-    } catch (groqErr) {
-      console.warn('Groq Grading unavailable, resorting to fallback scoring logic.', groqErr.message);
+    } catch (apiErr) {
+      console.warn('Gemini Grading unavailable, resorting to fallback scoring logic.', apiErr.message);
       score = Math.min(100, Math.max(10, Math.floor((formattedTranscript.length / 50))));
-      feedback = "Groq grading was temporarily unavailable. This is an estimated score based on transcript length.";
+      feedback = "Gemini grading was temporarily unavailable. This is an estimated score based on transcript length.";
     }
 
     // Save permanently to Database

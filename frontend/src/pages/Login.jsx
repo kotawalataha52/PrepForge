@@ -1,5 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
 import { ArrowRight, Mail, Lock, AlertCircle } from 'lucide-react';
 import bgImage from '../assets/bg.png';

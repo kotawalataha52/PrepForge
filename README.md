@@ -15,7 +15,7 @@ PrepForge is a comprehensive MERN-stack platform designed to revolutionize the w
 - **Frontend**: React, Vite, Tailwind CSS, Framer Motion
 - **Backend**: Node.js, Express.js, Socket.io
 - **Database**: MongoDB (Mongoose)
-- **AI Integration**: Powered by Groq AI for blazing fast inference.
+- **AI Integration**: Powered by Google Gemini API for fast, high-quality responses.
 
 ## 🚀 Getting Started
 
@@ -34,7 +34,7 @@ PrepForge is a comprehensive MERN-stack platform designed to revolutionize the w
    ```bash
    cd backend
    npm install
-   # Create a .env file with your MONGO_URI, JWT_SECRET, and GROQ_API_KEY
+   # Create a .env file with your MONGO_URI, JWT_SECRET, and GEMINI_API_KEY
    npm run dev
    ```
 
