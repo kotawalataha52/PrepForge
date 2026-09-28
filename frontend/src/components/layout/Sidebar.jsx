@@ -2,85 +2,178 @@ import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  LayoutDashboard, 
-  Bot, 
+  Home, 
   FileText, 
-
-  ChevronLeft,
+  FileEdit,
+  ChevronLeft, 
   ChevronRight
 } from 'lucide-react';
+import { AuthContext } from '../../context/AuthContext';
+import Logo from '../common/Logo';
 
-const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
+const Sidebar = ({ isCollapsed, setIsCollapsed, sessionCount = 0 }) => {
+  const { user } = useContext(AuthContext);
   const location = useLocation();
 
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
-    { name: 'Resume Intel', path: '/resume-intel', icon: <FileText size={20} /> },
+  const menuItems = [
+    { 
+      name: 'Overview', 
+      path: '/dashboard', 
+      icon: <Home size={17} />,
+      badge: sessionCount > 0 ? `${sessionCount}` : undefined
+    }
+  ];
 
+  const toolsItems = [
+    { 
+      name: 'Resume Builder', 
+      path: '/resume-tailor', 
+      icon: <FileEdit size={17} />
+    },
+    { 
+      name: 'Resume Intel', 
+      path: '/resume-intel', 
+      icon: <FileText size={17} />
+    },
   ];
 
   return (
-    <motion.div 
+    <motion.aside 
       initial={false}
-      animate={{ width: isCollapsed ? '80px' : '280px' }}
-      className="hidden md:flex flex-col h-screen glass border-r border-white/5 bg-black/40 relative z-40 transition-all duration-300"
+      animate={{ width: isCollapsed ? '76px' : '260px' }}
+      className="hidden md:flex flex-col h-screen border-r border-slate-800/80 bg-[#0B1120] text-slate-300 relative z-40 transition-all duration-300 select-none shrink-0"
     >
-      {/* Brand */}
-      <div className="h-20 flex items-center px-5 border-b border-white/5">
-        <Link to="/" className="flex items-center gap-3 w-full overflow-hidden">
-          <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-gray-900 rounded-xl glass-card">
-            <img src="/logo.png" alt="Logo" className="w-6 h-6 rounded border border-white/10" />
-          </div>
-          {!isCollapsed && (
-            <motion.span 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-xl font-bold font-display tracking-tight text-white whitespace-nowrap"
-            >
-              Prep<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Forge</span>
-            </motion.span>
-          )}
+      {/* Brand Header */}
+      <div className="h-16 flex flex-col justify-center px-4 border-b border-slate-800/80">
+        <Link to="/dashboard" className="flex items-center gap-2 overflow-hidden">
+          <Logo size="sm" showText={!isCollapsed} />
         </Link>
+        {!isCollapsed && (
+          <span className="text-[10px] uppercase font-bold tracking-widest text-blue-400/90 pl-9 -mt-0.5">
+            Interview Workspace
+          </span>
+        )}
       </div>
 
-      {/* Nav Links */}
-      <div className="flex-1 py-8 px-4 space-y-2 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={`flex items-center gap-4 px-3 py-3 rounded-xl transition-all duration-300 group ${
-                isActive 
-                  ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/10 text-cyan-400 border border-cyan-500/20 shadow-[0_0_15px_rgba(0,240,255,0.1)]' 
-                  : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-              }`}
-              title={isCollapsed ? item.name : ''}
-            >
-              <div className={`${isActive ? 'text-cyan-400' : 'group-hover:text-purple-400'} transition-colors shrink-0`}>
-                {item.icon}
-              </div>
-              {!isCollapsed && (
-                <span className="font-medium whitespace-nowrap">{item.name}</span>
-              )}
-            </Link>
-          );
-        })}
+      {/* User Card */}
+      {!isCollapsed && (
+        <div className="px-4 py-3.5 mx-3 mt-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white font-bold flex items-center justify-center text-sm shadow-md shrink-0">
+            {user?.name?.charAt(0).toUpperCase() || 'U'}
+          </div>
+          <div className="overflow-hidden min-w-0">
+            <h4 className="text-xs font-semibold text-white truncate leading-tight">
+              {user?.name || 'Candidate'}
+            </h4>
+            <p className="text-[11px] text-slate-400 truncate">
+              {user?.email || 'candidate@prepforge.io'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Nav List */}
+      <div className="flex-1 py-4 px-3 space-y-6 overflow-y-auto">
+        
+        {/* Menu Section */}
+        <div>
+          {!isCollapsed && (
+            <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Menu
+            </div>
+          )}
+          <div className="space-y-1">
+            {menuItems.map((item) => {
+              const isSelected = location.pathname === item.path;
+
+              return (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-150 group text-xs ${
+                    isSelected 
+                      ? 'bg-blue-600 text-white font-semibold shadow-sm shadow-blue-600/30' 
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                  title={isCollapsed ? item.name : ''}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`${isSelected ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'} transition-colors shrink-0`}>
+                      {item.icon}
+                    </div>
+                    {!isCollapsed && (
+                      <span className="truncate">{item.name}</span>
+                    )}
+                  </div>
+
+                  {!isCollapsed && item.badge !== undefined && (
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                      isSelected ? 'bg-blue-700 text-blue-100' : 'bg-slate-800 text-slate-400'
+                    }`}>
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Tools Section */}
+        <div>
+          {!isCollapsed && (
+            <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Tools
+            </div>
+          )}
+          <div className="space-y-1">
+            {toolsItems.map((item) => {
+              const isActive = location.pathname === item.path;
+
+              return (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-150 group text-xs ${
+                    isActive 
+                      ? 'bg-blue-600 text-white font-semibold shadow-sm shadow-blue-600/30' 
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                  title={isCollapsed ? item.name : ''}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`${isActive ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'} transition-colors shrink-0`}>
+                      {item.icon}
+                    </div>
+                    {!isCollapsed && (
+                      <span className="truncate">{item.name}</span>
+                    )}
+                  </div>
+
+                  {!isCollapsed && item.tag && (
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${item.tagColor}`}>
+                      {item.tag}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
       </div>
-
-
 
       {/* Collapse Toggle */}
       <button 
+        type="button"
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3.5 top-24 w-7 h-7 bg-gray-900 border border-white/10 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:border-cyan-500 hover:shadow-[0_0_10px_rgba(0,240,255,0.3)] transition-all z-50 cursor-pointer"
+        className="absolute -right-3 top-14 w-6 h-6 bg-[#0B1120] border border-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:border-blue-500 transition-all z-50 cursor-pointer shadow-md"
+        title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
-        {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        {isCollapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
       </button>
 
-    </motion.div>
+    </motion.aside>
   );
 };
 

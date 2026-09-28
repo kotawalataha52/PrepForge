@@ -1,9 +1,10 @@
 const { Server } = require('socket.io');
-const { OpenAI } = require('openai');
+const { getInterviewBotResponse } = require('./geminiService');
 
-// Runtime memory map for ongoing interviews (interviewId -> systemContext)
-const activeInterviewContexts = new Map();
-const interviewMessageCounts = new Map();
+// Runtime memory maps for ongoing interviews
+const activeInterviewContexts = new Map(); // interviewId -> systemContext
+const interviewMessageCounts = new Map();   // interviewId -> count
+const activeInterviewHistories = new Map(); // interviewId -> Array<{ sender: 'candidate'|'bot', text: string }>
 
 const initSocket = (server) => {
   const io = new Server(server, {
@@ -24,11 +25,14 @@ const initSocket = (server) => {
       if (context) {
         activeInterviewContexts.set(id, context);
       }
+      if (!activeInterviewHistories.has(id)) {
+        activeInterviewHistories.set(id, []);
+      }
     });
 
-    // Handle Incoming Chat Message
+    // Handle Incoming Chat Message (or Code Submission)
     socket.on('chat_message', async (data) => {
-      const { interviewId, message } = data;
+      const { interviewId, message, isCode, language } = data;
 
       try {
         io.to(interviewId).emit('bot_typing', { isTyping: true });
@@ -36,17 +40,41 @@ const initSocket = (server) => {
         const messageCount = (interviewMessageCounts.get(interviewId) || 0) + 1;
         interviewMessageCounts.set(interviewId, messageCount);
 
-        const context = activeInterviewContexts.get(interviewId) || "You are a generic software engineering interviewer. Keep responses to 2 sentences max.";
+        const context = activeInterviewContexts.get(interviewId) || "You are a top FAANG Senior Principal Technical Interviewer.";
+        const history = activeInterviewHistories.get(interviewId) || [];
 
-        const botResponse = await getGeminiResponse(message, context, messageCount === 1);
+        let userPrompt = message;
+        if (isCode) {
+          userPrompt = `[CODE_SUBMISSION: ${language || 'Code'}]\n${message}`;
+        }
+
+        const botResponse = await getInterviewBotResponse(
+          userPrompt, 
+          context, 
+          messageCount === 1,
+          messageCount,
+          history
+        );
+
+        // Record turn in session history to prevent repeating questions
+        history.push({ sender: 'candidate', text: userPrompt });
+        history.push({ sender: 'bot', text: botResponse });
+        activeInterviewHistories.set(interviewId, history);
 
         io.to(interviewId).emit('bot_typing', { isTyping: false });
-        io.to(interviewId).emit('new_message', { sender: 'bot', text: botResponse });
+        io.to(interviewId).emit('new_message', { 
+          sender: 'bot', 
+          text: botResponse,
+          isCodeReview: !!isCode
+        });
 
       } catch (error) {
         console.error('Bot Error:', error);
         io.to(interviewId).emit('bot_typing', { isTyping: false });
-        io.to(interviewId).emit('new_message', { sender: 'bot', text: 'I encountered an error connecting to the AI. Please check your Gemini API key.' });
+        io.to(interviewId).emit('new_message', {
+          sender: 'bot',
+          text: "I encountered a brief connection issue while evaluating. Could you please repeat or resubmit your approach?"
+        });
       }
     });
 
@@ -54,49 +82,6 @@ const initSocket = (server) => {
       console.log(`User disconnected: ${socket.id}`);
     });
   });
-};
-
-// Function to call Gemini API (free, fast)
-const getGeminiResponse = async (userMessage, systemContext, isFirstMessage = false) => {
-  try {
-    let systemPrompt = systemContext;
-
-    // Create Gemini client inline (dotenv is already loaded at this point)
-    const gemini = new OpenAI({
-      apiKey: process.env.GEMINI_API_KEY,
-      baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/'
-    });
-
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Gemini API timed out after 15 seconds')), 15000)
-    );
-
-    const completion = await Promise.race([
-      gemini.chat.completions.create({
-        model: 'gemini-3.7-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Candidate says: "${userMessage}"\nRespond naturally as the critical interviewer in 3 sentences max.` }
-        ],
-        temperature: 0.7,
-        max_tokens: 300
-      }),
-      timeoutPromise
-    ]);
-
-    return completion.choices[0].message.content;
-
-  } catch (err) {
-    console.warn('Gemini API unavailable, falling back to mock response:', err.message);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    if (isFirstMessage) {
-      const contextSnip = systemContext.includes("resume states") ? "I see your resume here!" : "";
-      return `[Mock Mode - Gemini Offline] ${contextSnip} Let's dive in. Can you elaborate on the core technical tradeoffs of your approach?`;
-    } else {
-      return `That's an interesting approach to "${userMessage}". Could you dive a bit deeper into the why behind that decision?`;
-    }
-  }
 };
 
 module.exports = { initSocket };

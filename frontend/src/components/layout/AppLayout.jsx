@@ -2,19 +2,20 @@ import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 
-const AppLayout = ({ children }) => {
+const AppLayout = ({ children, onNewInterview, sessionCount = 0 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div className="flex h-screen bg-[var(--color-background-dark)] text-white overflow-hidden">
-      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <Topbar />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-black/50 p-6 md:p-10 relative">
-          {/* Subtle Background Glow behind Dashboard content */}
-          <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-purple-600/5 blur-[150px] rounded-full pointer-events-none" />
-          
-          <div className="max-w-7xl mx-auto relative z-10">
+    <div className="flex h-screen bg-[#F4F7FC] text-slate-800 overflow-hidden">
+      <Sidebar 
+        isCollapsed={isCollapsed} 
+        setIsCollapsed={setIsCollapsed} 
+        sessionCount={sessionCount} 
+      />
+      <div className="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
+        <Topbar onNewInterview={onNewInterview} />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#F4F7FC] p-5 md:p-8 relative">
+          <div className="max-w-7xl mx-auto">
             {children}
           </div>
         </main>

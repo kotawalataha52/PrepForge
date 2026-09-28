@@ -1,15 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="neonGlowIcon" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0ff" />
-      <stop offset="100%" stop-color="#8a2be2" />
+    <linearGradient id="bgGrad1" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stopColor="#3B82F6" />
+      <stop offset="1" stopColor="#1D4ED8" />
     </linearGradient>
   </defs>
   
-  <!-- Outer Ring (Chat Bubble abstraction) -->
-  <circle cx="50" cy="50" r="45" fill="none" stroke="url(#neonGlowIcon)" stroke-width="8"/>
-  <path d="M 20,80 L 10,95 L 25,85" stroke="url(#neonGlowIcon)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Rounded Squircle -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#bgGrad1)" />
+  <rect x="2.5" y="2.5" width="59" height="59" rx="15.5" stroke="white" stroke-opacity="0.25" />
+
+  <!-- Bold Geometric 'P' + Forge Anvil Notch -->
+  <path d="M21 16C21 14.8954 21.8954 14 23 14H35.5C41.299 14 46 18.701 46 24.5C46 30.299 41.299 35 35.5 35H28.5V48C28.5 49.1046 27.6046 50 26.5 50H23C21.8954 50 21 49.1046 21 48V16Z" fill="white"/>
+  <!-- Inner Loop Cutout -->
+  <path d="M28.5 21V28H35C36.933 28 38.5 26.433 38.5 24.5C38.5 22.567 36.933 21 35 21H28.5Z" fill="url(#bgGrad1)"/>
   
-  <!-- Flame Core -->
-  <path d="M 50,25 C 30,50 35,70 50,70 C 65,70 70,50 50,25 Z" fill="url(#neonGlowIcon)"/>
+  <!-- Subtle Golden Star Accent -->
+  <path d="M46 8.5L47.5 12L51 13.5L47.5 15L46 18.5L44.5 15L41 13.5L44.5 12L46 8.5Z" fill="#FBBF24" />
+  <circle cx="46" cy="13.5" r="1.5" fill="#FEF08A" />
 </svg>
