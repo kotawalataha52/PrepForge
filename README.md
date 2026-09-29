@@ -11,7 +11,6 @@
     <img src="https://img.shields.io/badge/Node.js-Express-green?logo=node.js" alt="Node.js" />
     <img src="https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb" alt="MongoDB" />
     <img src="https://img.shields.io/badge/AI-Google_Gemini_2.0-orange?logo=google" alt="Google Gemini" />
-    <img src="https://img.shields.io/badge/License-ISC-lightgrey" alt="License" />
   </p>
 </div>
 
@@ -179,12 +178,8 @@ npm run dev
 
 ---
 
-## 🛡️ License
-
-This project is licensed under the [ISC License](LICENSE).
-
----
-
 <div align="center">
-  <sub>Designed and built with ❤️ to empower engineers to master technical interviews and forge their dream careers.</sub>
+  <br />
+  <p>⚡ <strong>Built with passion & precision by <a href="https://github.com/kotawalataha52" target="_blank">Taha Kotawala</a></strong> ⚡</p>
+  <p><sub>Empowering software engineers to ace interviews and forge high-impact careers.</sub></p>
 </div>
