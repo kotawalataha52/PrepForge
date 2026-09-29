@@ -28,7 +28,7 @@ exports.analyzeResume = async (req, res) => {
     });
   } catch (error) {
     console.error("Critical Resume Intel Error:", error);
-    return res.status(500).json({ success: false, message: 'Error processing resume intel analysis.' });
+    return res.status(500).json({ success: false, message: 'Failed to analyze resume: ' + (error.message || 'Server error') });
   }
 };
 
@@ -90,7 +90,7 @@ exports.rewriteResume = async (req, res) => {
     console.error('Resume Rewrite Error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to rewrite and tailor resume with AI: ' + (error.message || 'Server error')
+      message: 'Failed to rewrite and tailor resume: ' + (error.message || 'Server error')
     });
   }
 };

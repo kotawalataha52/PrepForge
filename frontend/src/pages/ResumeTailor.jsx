@@ -185,6 +185,12 @@ const ResumeTailor = () => {
   const [isRescoring, setIsRescoring] = useState(false);
   const [scoreDelta, setScoreDelta] = useState(null);
   const [rescoreSuccessMsg, setRescoreSuccessMsg] = useState('');
+  const [skillInputs, setSkillInputs] = useState({
+    languages: '',
+    frameworks: '',
+    toolsAndCloud: '',
+    methodologies: ''
+  });
 
   const resumeSheetRef = useRef(null);
 
@@ -369,6 +375,39 @@ const ResumeTailor = () => {
     setResumeData((prev) => ({ ...prev, summary: val }));
   };
 
+  // Experience Handlers
+  const addExperience = () => {
+    setResumeData((prev) => ({
+      ...prev,
+      experience: [
+        ...(prev.experience || []),
+        {
+          title: 'Software Engineer',
+          company: 'Company Name',
+          location: 'Remote',
+          startDate: '2023',
+          endDate: 'Present',
+          bullets: ['Engineered scalable features improving system performance and reliability.']
+        }
+      ]
+    }));
+  };
+
+  const deleteExperience = (expIdx) => {
+    setResumeData((prev) => ({
+      ...prev,
+      experience: prev.experience.filter((_, idx) => idx !== expIdx)
+    }));
+  };
+
+  const updateExperienceField = (expIdx, field, val) => {
+    setResumeData((prev) => {
+      const next = [...(prev.experience || [])];
+      next[expIdx] = { ...next[expIdx], [field]: val };
+      return { ...prev, experience: next };
+    });
+  };
+
   const updateExperienceBullet = (expIdx, bulletIdx, val) => {
     setResumeData((prev) => {
       const nextExp = [...prev.experience];
@@ -399,6 +438,30 @@ const ResumeTailor = () => {
     });
   };
 
+  // Skills Handlers
+  const addSkill = (category) => {
+    const text = skillInputs[category]?.trim();
+    if (!text) return;
+    setResumeData((prev) => {
+      const current = prev.skills?.[category] || [];
+      const newItems = text.split(',').map(s => s.trim()).filter(Boolean);
+      const combined = [...current];
+      newItems.forEach(item => {
+        if (!combined.some(c => c.toLowerCase() === item.toLowerCase())) {
+          combined.push(item);
+        }
+      });
+      return {
+        ...prev,
+        skills: {
+          ...prev.skills,
+          [category]: combined
+        }
+      };
+    });
+    setSkillInputs((prev) => ({ ...prev, [category]: '' }));
+  };
+
   const removeSkill = (category, skillIdx) => {
     setResumeData((prev) => {
       if (!prev.skills?.[category]) return prev;
@@ -409,6 +472,67 @@ const ResumeTailor = () => {
           [category]: prev.skills[category].filter((_, idx) => idx !== skillIdx)
         }
       };
+    });
+  };
+
+  // Projects Handlers
+  const addProject = () => {
+    setResumeData((prev) => ({
+      ...prev,
+      projects: [
+        ...(prev.projects || []),
+        {
+          name: 'Featured Application',
+          description: 'Engineered high-performance cloud application with automated CI/CD.',
+          techStack: ['React', 'Node.js', 'PostgreSQL'],
+          bullets: []
+        }
+      ]
+    }));
+  };
+
+  const deleteProject = (projIdx) => {
+    setResumeData((prev) => ({
+      ...prev,
+      projects: prev.projects.filter((_, idx) => idx !== projIdx)
+    }));
+  };
+
+  const updateProjectField = (projIdx, field, val) => {
+    setResumeData((prev) => {
+      const next = [...(prev.projects || [])];
+      next[projIdx] = { ...next[projIdx], [field]: val };
+      return { ...prev, projects: next };
+    });
+  };
+
+  // Education Handlers
+  const addEducation = () => {
+    setResumeData((prev) => ({
+      ...prev,
+      education: [
+        ...(prev.education || []),
+        {
+          degree: 'B.S. in Computer Science',
+          institution: 'University Name',
+          graduationYear: '2024'
+        }
+      ]
+    }));
+  };
+
+  const deleteEducation = (eduIdx) => {
+    setResumeData((prev) => ({
+      ...prev,
+      education: prev.education.filter((_, idx) => idx !== eduIdx)
+    }));
+  };
+
+  const updateEducationField = (eduIdx, field, val) => {
+    setResumeData((prev) => {
+      const next = [...(prev.education || [])];
+      next[eduIdx] = { ...next[eduIdx], [field]: val };
+      return { ...prev, education: next };
     });
   };
 
@@ -745,53 +869,53 @@ const ResumeTailor = () => {
 
                 {/* SECTION 1: Personal Info */}
                 {activeEditorSection === 'info' && (
-                  <div className="space-y-2.5 pt-1">
+                  <div className="space-y-3 pt-1">
                     <div>
-                      <label className="text-[11px] text-gray-400">Full Name</label>
+                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Full Name</label>
                       <input
                         type="text"
                         value={resumeData.personalInfo?.fullName || ''}
                         onChange={(e) => updatePersonalInfo('fullName', e.target.value)}
-                        className="w-full mt-0.5 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-white text-xs focus:border-indigo-500 focus:outline-none"
+                        className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-slate-900 text-xs focus:border-blue-600 focus:bg-white focus:outline-none transition"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2.5">
                       <div>
-                        <label className="text-[11px] text-gray-400">Email</label>
+                        <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Email</label>
                         <input
                           type="email"
                           value={resumeData.personalInfo?.email || ''}
                           onChange={(e) => updatePersonalInfo('email', e.target.value)}
-                          className="w-full mt-0.5 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-white text-xs focus:border-indigo-500 focus:outline-none"
+                          className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-slate-900 text-xs focus:border-blue-600 focus:bg-white focus:outline-none transition"
                         />
                       </div>
                       <div>
-                        <label className="text-[11px] text-gray-400">Phone</label>
+                        <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Phone</label>
                         <input
                           type="text"
                           value={resumeData.personalInfo?.phone || ''}
                           onChange={(e) => updatePersonalInfo('phone', e.target.value)}
-                          className="w-full mt-0.5 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-white text-xs focus:border-indigo-500 focus:outline-none"
+                          className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-slate-900 text-xs focus:border-blue-600 focus:bg-white focus:outline-none transition"
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2.5">
                       <div>
-                        <label className="text-[11px] text-gray-400">Location</label>
+                        <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Location</label>
                         <input
                           type="text"
                           value={resumeData.personalInfo?.location || ''}
                           onChange={(e) => updatePersonalInfo('location', e.target.value)}
-                          className="w-full mt-0.5 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-white text-xs focus:border-indigo-500 focus:outline-none"
+                          className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-slate-900 text-xs focus:border-blue-600 focus:bg-white focus:outline-none transition"
                         />
                       </div>
                       <div>
-                        <label className="text-[11px] text-gray-400">LinkedIn</label>
+                        <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">LinkedIn</label>
                         <input
                           type="text"
                           value={resumeData.personalInfo?.linkedin || ''}
                           onChange={(e) => updatePersonalInfo('linkedin', e.target.value)}
-                          className="w-full mt-0.5 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-white text-xs focus:border-indigo-500 focus:outline-none"
+                          className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-slate-900 text-xs focus:border-blue-600 focus:bg-white focus:outline-none transition"
                         />
                       </div>
                     </div>
@@ -801,52 +925,91 @@ const ResumeTailor = () => {
                 {/* SECTION 2: Summary */}
                 {activeEditorSection === 'summary' && (
                   <div className="space-y-2 pt-1">
-                    <label className="text-[11px] text-gray-400">Executive Summary</label>
+                    <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Executive Summary</label>
                     <textarea
                       rows={5}
                       value={resumeData.summary || ''}
                       onChange={(e) => updateSummary(e.target.value)}
-                      className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white text-xs focus:border-indigo-500 focus:outline-none leading-relaxed"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 text-xs focus:border-blue-600 focus:bg-white focus:outline-none leading-relaxed transition"
                     />
                   </div>
                 )}
 
                 {/* SECTION 3: Experience */}
                 {activeEditorSection === 'experience' && (
-                  <div className="space-y-4 pt-1 max-h-[460px] overflow-y-auto pr-1">
+                  <div className="space-y-4 pt-1 max-h-[480px] overflow-y-auto pr-1">
                     {resumeData.experience?.map((exp, expIdx) => (
-                      <div key={expIdx} className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-2.5">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <input
-                              type="text"
-                              value={exp.title}
-                              onChange={(e) => {
-                                const next = [...resumeData.experience];
-                                next[expIdx].title = e.target.value;
-                                setResumeData({ ...resumeData, experience: next });
-                              }}
-                              className="font-bold text-white text-xs bg-transparent border-b border-transparent hover:border-white/20 focus:border-indigo-500 focus:outline-none"
-                            />
-                            <div className="text-[11px] text-indigo-400">{exp.company} • {exp.startDate} - {exp.endDate}</div>
+                      <div key={expIdx} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="flex-1 space-y-1.5">
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Job Title</label>
+                              <input
+                                type="text"
+                                value={exp.title || ''}
+                                onChange={(e) => updateExperienceField(expIdx, 'title', e.target.value)}
+                                placeholder="e.g. Senior Software Engineer"
+                                className="w-full font-bold text-slate-900 text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1 focus:border-blue-600 focus:outline-none"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Company</label>
+                                <input
+                                  type="text"
+                                  value={exp.company || ''}
+                                  onChange={(e) => updateExperienceField(expIdx, 'company', e.target.value)}
+                                  placeholder="e.g. Acme Corp"
+                                  className="w-full text-slate-800 text-xs bg-white border border-slate-200 rounded-lg px-2 py-1 focus:border-blue-600 focus:outline-none"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Dates</label>
+                                <input
+                                  type="text"
+                                  value={`${exp.startDate || ''}${exp.startDate && exp.endDate ? ' - ' : ''}${exp.endDate || ''}`}
+                                  onChange={(e) => {
+                                    const parts = e.target.value.split('-');
+                                    if (parts.length > 1) {
+                                      updateExperienceField(expIdx, 'startDate', parts[0].trim());
+                                      updateExperienceField(expIdx, 'endDate', parts.slice(1).join('-').trim());
+                                    } else {
+                                      updateExperienceField(expIdx, 'startDate', e.target.value);
+                                      updateExperienceField(expIdx, 'endDate', '');
+                                    }
+                                  }}
+                                  placeholder="e.g. 2022 - Present"
+                                  className="w-full text-slate-800 text-xs bg-white border border-slate-200 rounded-lg px-2 py-1 focus:border-blue-600 focus:outline-none"
+                                />
+                              </div>
+                            </div>
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => deleteExperience(expIdx)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer mt-3"
+                            title="Delete Experience Role"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
 
                         {/* Bullets */}
-                        <div className="space-y-1.5">
+                        <div className="space-y-2 pt-1 border-t border-slate-200/60">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Bullet Points</label>
                           {exp.bullets?.map((bullet, bulletIdx) => (
                             <div key={bulletIdx} className="flex items-start gap-1.5">
-                              <span className="text-indigo-400 mt-1.5 text-xs">•</span>
+                              <span className="text-blue-600 mt-1.5 text-xs font-bold">•</span>
                               <textarea
                                 rows={2}
                                 value={bullet}
                                 onChange={(e) => updateExperienceBullet(expIdx, bulletIdx, e.target.value)}
-                                className="flex-1 bg-black/30 border border-white/5 rounded-lg p-1.5 text-xs text-gray-200 focus:border-indigo-500 focus:outline-none leading-relaxed"
+                                className="flex-1 bg-white border border-slate-200 rounded-lg p-2 text-xs text-slate-800 focus:border-blue-600 focus:outline-none leading-relaxed transition"
                               />
                               <button
                                 type="button"
                                 onClick={() => deleteExperienceBullet(expIdx, bulletIdx)}
-                                className="p-1 text-gray-500 hover:text-rose-400 transition"
+                                className="p-1 text-slate-400 hover:text-rose-600 transition"
                                 title="Delete bullet point"
                               >
                                 <Trash2 className="w-3 h-3" />
@@ -857,40 +1020,84 @@ const ResumeTailor = () => {
                           <button
                             type="button"
                             onClick={() => addExperienceBullet(expIdx)}
-                            className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1 mt-1 pt-1"
+                            className="text-[11px] text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 mt-1 pt-1 cursor-pointer"
                           >
                             <Plus className="w-3 h-3" /> Add Bullet Point
                           </button>
                         </div>
                       </div>
                     ))}
+
+                    <button
+                      type="button"
+                      onClick={addExperience}
+                      className="w-full py-2.5 border-2 border-dashed border-blue-200 hover:border-blue-400 bg-blue-50/40 hover:bg-blue-50 rounded-xl text-blue-700 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Experience Role
+                    </button>
                   </div>
                 )}
 
                 {/* SECTION 4: Skills */}
                 {activeEditorSection === 'skills' && (
-                  <div className="space-y-3 pt-1">
+                  <div className="space-y-4 pt-1 max-h-[480px] overflow-y-auto pr-1">
                     {['languages', 'frameworks', 'toolsAndCloud', 'methodologies'].map((cat) => (
-                      <div key={cat} className="space-y-1.5">
-                        <label className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
-                          {cat === 'toolsAndCloud' ? 'Tools & Cloud' : cat}
-                        </label>
-                        <div className="flex flex-wrap gap-1">
-                          {resumeData.skills?.[cat]?.map((skill, sIdx) => (
-                            <span
-                              key={sIdx}
-                              className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-[11px] flex items-center gap-1"
-                            >
-                              {skill}
-                              <button
-                                type="button"
-                                onClick={() => removeSkill(cat, sIdx)}
-                                className="hover:text-rose-400 transition ml-0.5 text-xs"
+                      <div key={cat} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] text-slate-800 uppercase tracking-wider font-bold">
+                            {cat === 'toolsAndCloud' ? 'Tools & Cloud' : cat === 'languages' ? 'Programming Languages' : cat === 'frameworks' ? 'Frameworks & Libraries' : 'Methodologies & Practices'}
+                          </label>
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            {resumeData.skills?.[cat]?.length || 0} skills
+                          </span>
+                        </div>
+
+                        {/* Existing skill badges */}
+                        <div className="flex flex-wrap gap-1.5 min-h-[28px]">
+                          {resumeData.skills?.[cat]?.length ? (
+                            resumeData.skills[cat].map((skill, sIdx) => (
+                              <span
+                                key={sIdx}
+                                className="px-2.5 py-1 rounded-md bg-white text-blue-700 border border-slate-200 text-[11px] font-semibold flex items-center gap-1.5 shadow-2xs group"
                               >
-                                ×
-                              </button>
-                            </span>
-                          ))}
+                                {skill}
+                                <button
+                                  type="button"
+                                  onClick={() => removeSkill(cat, sIdx)}
+                                  className="text-slate-400 hover:text-rose-600 transition ml-0.5 text-xs cursor-pointer font-bold"
+                                  title="Remove skill"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[11px] text-slate-400 italic">No skills added yet in this category.</span>
+                          )}
+                        </div>
+
+                        {/* Add Skill Input Row */}
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <input
+                            type="text"
+                            placeholder={`Add ${cat === 'languages' ? 'language (e.g. TypeScript, Python)' : cat === 'frameworks' ? 'framework (e.g. Next.js, FastAPI)' : cat === 'toolsAndCloud' ? 'tool (e.g. Docker, AWS)' : 'methodology (e.g. CI/CD, Agile)'}...`}
+                            value={skillInputs[cat] || ''}
+                            onChange={(e) => setSkillInputs({ ...skillInputs, [cat]: e.target.value })}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                addSkill(cat);
+                              }
+                            }}
+                            className="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-900 text-xs focus:border-blue-600 focus:outline-none transition placeholder:text-slate-400"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => addSkill(cat)}
+                            className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1 transition cursor-pointer shadow-xs shrink-0"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> Add
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -899,52 +1106,127 @@ const ResumeTailor = () => {
 
                 {/* SECTION 5: Projects */}
                 {activeEditorSection === 'projects' && (
-                  <div className="space-y-3 pt-1">
+                  <div className="space-y-4 pt-1 max-h-[480px] overflow-y-auto pr-1">
                     {resumeData.projects?.map((proj, pIdx) => (
-                      <div key={pIdx} className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
-                        <input
-                          type="text"
-                          value={proj.name}
-                          onChange={(e) => {
-                            const next = [...resumeData.projects];
-                            next[pIdx].name = e.target.value;
-                            setResumeData({ ...resumeData, projects: next });
-                          }}
-                          className="font-bold text-white text-xs bg-transparent border-b border-transparent hover:border-white/20 focus:border-indigo-500 focus:outline-none w-full"
-                        />
-                        <textarea
-                          rows={2}
-                          value={proj.description}
-                          onChange={(e) => {
-                            const next = [...resumeData.projects];
-                            next[pIdx].description = e.target.value;
-                            setResumeData({ ...resumeData, projects: next });
-                          }}
-                          className="w-full bg-black/30 border border-white/5 rounded-lg p-1.5 text-xs text-gray-200 focus:border-indigo-500 focus:outline-none"
-                        />
+                      <div key={pIdx} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="flex-1 space-y-1.5">
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Project Name</label>
+                              <input
+                                type="text"
+                                value={proj.name || ''}
+                                onChange={(e) => updateProjectField(pIdx, 'name', e.target.value)}
+                                placeholder="e.g. Distributed Task Queue"
+                                className="w-full font-bold text-slate-900 text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1 focus:border-blue-600 focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tech Stack (comma separated)</label>
+                              <input
+                                type="text"
+                                value={proj.techStack ? (Array.isArray(proj.techStack) ? proj.techStack.join(', ') : proj.techStack) : ''}
+                                onChange={(e) => {
+                                  const items = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+                                  updateProjectField(pIdx, 'techStack', items);
+                                }}
+                                placeholder="e.g. React, Node.js, Redis, AWS"
+                                className="w-full text-slate-800 text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1 focus:border-blue-600 focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => deleteProject(pIdx)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer mt-3"
+                            title="Delete Project"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Description</label>
+                          <textarea
+                            rows={2}
+                            value={proj.description || ''}
+                            onChange={(e) => updateProjectField(pIdx, 'description', e.target.value)}
+                            placeholder="Brief summary of project outcomes and achievements..."
+                            className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-slate-800 focus:border-blue-600 focus:outline-none transition mt-0.5 leading-relaxed"
+                          />
+                        </div>
                       </div>
                     ))}
+
+                    <button
+                      type="button"
+                      onClick={addProject}
+                      className="w-full py-2.5 border-2 border-dashed border-blue-200 hover:border-blue-400 bg-blue-50/40 hover:bg-blue-50 rounded-xl text-blue-700 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Project
+                    </button>
                   </div>
                 )}
 
                 {/* SECTION 6: Education */}
                 {activeEditorSection === 'education' && (
-                  <div className="space-y-3 pt-1">
+                  <div className="space-y-4 pt-1 max-h-[480px] overflow-y-auto pr-1">
                     {resumeData.education?.map((edu, eIdx) => (
-                      <div key={eIdx} className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                        <input
-                          type="text"
-                          value={edu.degree}
-                          onChange={(e) => {
-                            const next = [...resumeData.education];
-                            next[eIdx].degree = e.target.value;
-                            setResumeData({ ...resumeData, education: next });
-                          }}
-                          className="font-bold text-white text-xs bg-transparent border-b border-transparent hover:border-white/20 focus:border-indigo-500 focus:outline-none w-full"
-                        />
-                        <div className="text-[11px] text-gray-400">{edu.institution} ({edu.graduationYear})</div>
+                      <div key={eIdx} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="flex-1 space-y-1.5">
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Degree / Certificate</label>
+                              <input
+                                type="text"
+                                value={edu.degree || ''}
+                                onChange={(e) => updateEducationField(eIdx, 'degree', e.target.value)}
+                                placeholder="e.g. B.S. in Computer Science"
+                                className="w-full font-bold text-slate-900 text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1 focus:border-blue-600 focus:outline-none"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Institution</label>
+                                <input
+                                  type="text"
+                                  value={edu.institution || ''}
+                                  onChange={(e) => updateEducationField(eIdx, 'institution', e.target.value)}
+                                  placeholder="e.g. Stanford University"
+                                  className="w-full text-slate-800 text-xs bg-white border border-slate-200 rounded-lg px-2 py-1 focus:border-blue-600 focus:outline-none"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Graduation Year</label>
+                                <input
+                                  type="text"
+                                  value={edu.graduationYear || ''}
+                                  onChange={(e) => updateEducationField(eIdx, 'graduationYear', e.target.value)}
+                                  placeholder="e.g. 2024"
+                                  className="w-full text-slate-800 text-xs bg-white border border-slate-200 rounded-lg px-2 py-1 focus:border-blue-600 focus:outline-none"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => deleteEducation(eIdx)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer mt-3"
+                            title="Delete Education"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     ))}
+
+                    <button
+                      type="button"
+                      onClick={addEducation}
+                      className="w-full py-2.5 border-2 border-dashed border-blue-200 hover:border-blue-400 bg-blue-50/40 hover:bg-blue-50 rounded-xl text-blue-700 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Education Entry
+                    </button>
                   </div>
                 )}
               </div>
@@ -953,14 +1235,16 @@ const ResumeTailor = () => {
             {/* RIGHT: Live Printable / Exportable Sheet */}
             <div className="lg:col-span-7 space-y-3">
               {/* Template Style Selector */}
-              <div className="flex items-center justify-between bg-black/40 p-2.5 rounded-xl border border-white/10">
+              <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-xs">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-gray-400">Template Style:</span>
+                  <span className="text-[11px] font-bold text-slate-700">Template Style:</span>
                   <button
                     type="button"
                     onClick={() => setResumeTemplate('modern')}
-                    className={`px-2 py-0.5 rounded text-xs font-medium transition cursor-pointer ${
-                      resumeTemplate === 'modern' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                      resumeTemplate === 'modern'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
                     }`}
                   >
                     Clean Tech
@@ -968,8 +1252,10 @@ const ResumeTailor = () => {
                   <button
                     type="button"
                     onClick={() => setResumeTemplate('minimal')}
-                    className={`px-2 py-0.5 rounded text-xs font-medium transition cursor-pointer ${
-                      resumeTemplate === 'minimal' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                      resumeTemplate === 'minimal'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
                     }`}
                   >
                     Ivy Minimal
@@ -979,15 +1265,15 @@ const ResumeTailor = () => {
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="p-1 rounded text-gray-400 hover:text-white transition"
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
                   title="Print Sheet"
                 >
-                  <Printer className="w-3.5 h-3.5" />
+                  <Printer className="w-4 h-4" />
                 </button>
               </div>
 
               {/* THE RESUME DOCUMENT SHEET */}
-              <div className="overflow-x-auto shadow-2xl rounded-xl border border-white/10">
+              <div className="overflow-x-auto shadow-xl rounded-xl border border-slate-200/90">
                 <div
                   id="resume-preview-sheet"
                   ref={resumeSheetRef}

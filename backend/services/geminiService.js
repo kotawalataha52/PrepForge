@@ -13,6 +13,20 @@ const MODEL_FALLBACK_LIST = [
 ];
 
 /**
+ * Robust helper to clean and extract JSON from model responses (handling markdown backticks)
+ */
+function extractJsonFromText(rawText) {
+  if (!rawText) return null;
+  let clean = rawText.trim();
+  if (clean.startsWith('```json')) {
+    clean = clean.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+  } else if (clean.startsWith('```')) {
+    clean = clean.replace(/^```\s*/i, '').replace(/\s*```$/, '');
+  }
+  return JSON.parse(clean);
+}
+
+/**
  * Robust helper to call Gemini generateContent with auto-fallback across available models
  */
 async function callGemini({
@@ -196,12 +210,28 @@ Interview Turn #${messageCount}. Evaluate their response. Transition to the next
 
 /**
  * Generate comprehensive rubric evaluation and feedback after interview finishes
+ * Supports both (transcript, role) and (role, transcript) argument orders
  */
-async function generateInterviewFeedback(transcript, role = "Software Engineer") {
+async function generateInterviewFeedback(arg1, arg2) {
   try {
-    const formattedTranscript = transcript
-      .map(t => `${t.sender === 'bot' ? 'Interviewer' : 'Candidate'}: ${t.text}`)
-      .join('\n\n');
+    let transcript = arg1;
+    let role = "Software Engineer";
+
+    if (typeof arg1 === 'string' && (Array.isArray(arg2) || typeof arg2 === 'string')) {
+      role = arg1;
+      transcript = arg2;
+    } else if (typeof arg2 === 'string') {
+      role = arg2;
+    }
+
+    let formattedTranscript = '';
+    if (Array.isArray(transcript)) {
+      formattedTranscript = transcript
+        .map(t => `${(t.sender === 'bot' || t.sender === 'BOT') ? 'Interviewer' : 'Candidate'}: ${t.text || ''}`)
+        .join('\n\n');
+    } else if (typeof transcript === 'string') {
+      formattedTranscript = transcript;
+    }
 
     const prompt = `You are a Principal Bar-Raiser at a Tier-1 tech company evaluating a completed technical interview for a "${role}" position.
 
@@ -237,17 +267,17 @@ Output ONLY a valid JSON object matching this schema:
       maxOutputTokens: 1200
     });
 
-    const parsed = JSON.parse(responseText);
+    const parsed = extractJsonFromText(responseText);
     return {
-      score: parsed.score || 75,
-      feedback: parsed.feedback || "The candidate demonstrated solid technical knowledge and problem-solving capability throughout the interview.",
-      strengths: parsed.strengths || ["Clean problem-solving", "Good communication"],
-      improvements: parsed.improvements || ["Handle more edge cases", "Elaborate deeper on memory tradeoffs"],
-      rubricBreakdown: parsed.rubricBreakdown || {
-        technicalAccuracy: parsed.score || 75,
-        problemSolving: parsed.score || 75,
+      score: parsed?.score || 75,
+      feedback: parsed?.feedback || "The candidate demonstrated solid technical knowledge and problem-solving capability throughout the interview.",
+      strengths: parsed?.strengths || ["Clean problem-solving", "Good communication"],
+      improvements: parsed?.improvements || ["Handle more edge cases", "Elaborate deeper on memory tradeoffs"],
+      rubricBreakdown: parsed?.rubricBreakdown || {
+        technicalAccuracy: parsed?.score || 75,
+        problemSolving: parsed?.score || 75,
         communication: 80,
-        codeEfficiency: parsed.score || 70
+        codeEfficiency: parsed?.score || 70
       }
     };
   } catch (err) {
@@ -294,11 +324,11 @@ Output ONLY a valid JSON object matching this schema:
       maxOutputTokens: 1200
     });
 
-    const parsed = JSON.parse(responseText);
+    const parsed = extractJsonFromText(responseText);
     return {
-      score: parsed.score || 68,
-      keywords: parsed.keywords || ["Docker", "Kubernetes", "GraphQL", "CI/CD", "Redis"],
-      improvements: parsed.improvements || [
+      score: parsed?.score || 68,
+      keywords: parsed?.keywords || ["Docker", "Kubernetes", "GraphQL", "CI/CD", "Redis"],
+      improvements: parsed?.improvements || [
         "Include quantified impact metrics (e.g. % performance increase, latency reductions).",
         "Add missing core technologies and architectural keywords relevant to the target role.",
         "Strengthen project bullet points using the Google XYZ formula: Accomplished [X], as measured by [Y], by doing [Z]."
@@ -420,11 +450,14 @@ Output ONLY a valid JSON object matching this schema:
       timeoutMs: 30000
     });
 
-    const parsed = JSON.parse(responseText);
+    const parsed = extractJsonFromText(responseText);
+    if (!parsed) {
+      throw new Error('Could not parse JSON response from Gemini');
+    }
     return parsed;
   } catch (err) {
     console.error('Resume Tailoring Error:', err);
-    throw new Error('Failed to generate tailored resume with Gemini: ' + err.message);
+    throw new Error('Failed to generate tailored resume: ' + err.message);
   }
 }
 
@@ -470,11 +503,11 @@ Output ONLY a valid JSON object:
       timeoutMs: 15000
     });
 
-    const parsed = JSON.parse(responseText);
+    const parsed = extractJsonFromText(responseText);
     return {
-      matchScore: parsed.matchScore || 90,
-      tailoringHighlights: parsed.highlights || ["Strong alignment with target responsibilities", "Quantified achievements match core competencies"],
-      remainingGaps: parsed.gaps || ["Consider adding more specific domain metrics"]
+      matchScore: parsed?.matchScore || 90,
+      tailoringHighlights: parsed?.highlights || ["Strong alignment with target responsibilities", "Quantified achievements match core competencies"],
+      remainingGaps: parsed?.gaps || ["Consider adding more specific domain metrics"]
     };
   } catch (err) {
     console.error('Re-score Error:', err);
@@ -489,7 +522,10 @@ Output ONLY a valid JSON object:
 module.exports = {
   getInterviewBotResponse,
   generateInterviewFeedback,
+  gradeInterviewTranscript: generateInterviewFeedback,
   generateATSIntel,
+  analyzeResumeATS: generateATSIntel,
   generateTailoredResume,
+  rewriteAndTailorResume: generateTailoredResume,
   rescoreTailoredResume
 };
