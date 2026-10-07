@@ -1,7 +1,7 @@
 
   <div align="center">
 <img src="frontend/public/favicon.svg" width="90" alt="PrepForge"/>
-#  PrepForge
+ <h2>PrepForge</h2>
  
 ### *Forge your prep — a real-time AI interviewer with an ATS resume studio built in*
  
@@ -303,25 +303,7 @@ PrepForge/
 - **Why structured resume JSON?** One source of truth drives the editor, the re-scorer, both templates, and the PDF — edit once, everything updates.
 ---
  
-## 🗺️ Roadmap & Known Limitations
- 
-*Honest engineering — v1 is a working core with clear edges:*
- 
-- [ ] **Authenticate the WebSocket handshake** — verify the JWT on `connection` and tie each room to its owner; restrict Socket.io CORS from `*` to the deployed frontend origin
-- [ ] **Durable session state** — live interview context, counters, and history currently sit in in-memory `Map`s (lost on restart, single-instance only, never evicted); move to Redis or MongoDB with a TTL
-- [ ] **Persist the full scorecard** — the AI returns strengths, improvements, and a 4-axis `rubricBreakdown`, but the `Interview` schema stores only `score`, `feedback`, and `transcript`
-- [ ] **Fail loudly, not optimistically** — when every model fails, scoring helpers currently return default scores; surface an error / "couldn't grade" state instead
-- [ ] **Unbiased ATS scoring** — remove the hard-coded score ranges from prompts and ground the score in measurable keyword overlap
-- [ ] **Code execution sandbox** — run submissions against test cases instead of relying on AI judgment alone
-- [ ] **Rate limiting** on auth and AI routes to protect Gemini quota
-- [ ] **Cleanup** — remove the debug request logger from `server.js`, add an input-validation layer
-- [ ] **Require `JWT_SECRET` at startup** — `authController` falls back to a hard-coded `'secret'` if the env var is missing; fail fast instead
-- [ ] **Richer resume context** — the interviewer keeps only the first ~2,000 characters of the resume, so later projects may never come up
-- [ ] **Save tailored resumes** — results currently live only in the client; persist versions per job
-- [ ] **Upload error handling** — a non-PDF upload currently surfaces as a generic server error instead of a clean `400`
-- [ ] **Test suite** — unit tests for the AI layer (mock `fetch`), integration tests for the REST API
----
- 
+
 ## 🛠️ Tech Stack
  
 | Layer | Technology |
