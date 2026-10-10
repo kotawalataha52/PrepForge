@@ -17,7 +17,8 @@ import {
   Code2,
   Maximize2,
   Minimize2,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import api from '../utils/api';
 import InterviewFeedbackModal from '../components/modals/InterviewFeedbackModal';
@@ -43,11 +44,17 @@ const InterviewRoom = () => {
 
   const [isEnding, setIsEnding] = useState(false);
   const [feedbackData, setFeedbackData] = useState(null);
+  const [strikes, setStrikes] = useState(0);
   
   const systemContext = location.state?.context;
   const targetRole = location.state?.role || "Software Engineer";
 
   const chatEndRef = useRef(null);
+  const messagesRef = useRef([]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -69,6 +76,10 @@ const InterviewRoom = () => {
       }
 
       socket.on('new_message', (data) => {
+        if (typeof data.strikes === 'number') {
+          setStrikes(data.strikes);
+        }
+
         setMessages((prev) => [
           ...prev, 
           { 
@@ -86,12 +97,51 @@ const InterviewRoom = () => {
         setIsSubmittingCode(false);
       });
 
+      socket.on('interview_terminated', async (data) => {
+        setStrikes(3);
+        stopSpeaking();
+        setIsEnding(true);
+
+        try {
+          const currentTranscript = messagesRef.current.map(m => ({ sender: m.sender, text: m.text }));
+          if (data?.finalMessage && !currentTranscript.some(m => m.text === data.finalMessage)) {
+            currentTranscript.push({ sender: 'bot', text: data.finalMessage });
+          }
+
+          const response = await api.post('/interview/finish', {
+            transcript: currentTranscript,
+            mockId: id,
+            role: targetRole,
+            isTerminated: true
+          });
+
+          setFeedbackData(response.data?.data);
+        } catch (err) {
+          console.error('Failed to finish terminated interview:', err);
+          setFeedbackData({
+            overallScore: 0,
+            feedback: "Interview automatically terminated due to excessive off-topic remarks (exceeded 2 strikes). Candidate failed to focus on the technical assessment.",
+            recommendation: "Strong No Hire",
+            scores: { technical: 0, communication: 0, problemSolving: 0 },
+            strengths: [],
+            improvements: [
+              "Conduct violation: Candidate repeatedly deflected or spoke off-topic during a formal interview.",
+              "Prepare to answer technical fundamentals directly and professionally."
+            ],
+            suggestedTopics: ["Professional Interview Etiquette", "Core Technical Topics"]
+          });
+        } finally {
+          setIsEnding(false);
+        }
+      });
+
       socket.on('bot_typing', ({ isTyping }) => {
         setIsBotTyping(isTyping);
       });
 
       return () => {
         socket.off('new_message');
+        socket.off('interview_terminated');
         socket.off('bot_typing');
       };
     }
@@ -303,7 +353,20 @@ const InterviewRoom = () => {
         {/* Header */}
         <div className="h-14 border-b border-white/5 flex items-center justify-between px-5 glass">
           <div>
-            <h2 className="font-display font-bold text-xs md:text-sm text-white">{targetRole}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="font-display font-bold text-xs md:text-sm text-white">{targetRole}</h2>
+              {strikes > 0 && (
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                  strikes >= 3 
+                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' 
+                    : strikes === 2 
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse'
+                    : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                }`}>
+                  {strikes >= 3 ? 'Terminated' : `${strikes}/2 Strikes`}
+                </span>
+              )}
+            </div>
             <p className="text-[10px] text-gray-400">DSA & Technical Discussion</p>
           </div>
 
@@ -328,6 +391,40 @@ const InterviewRoom = () => {
             </button>
           </div>
         </div>
+
+        {/* Conduct Warning Banner if candidate has off-topic strikes */}
+        <AnimatePresence>
+          {strikes > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className={`mx-4 mt-3 p-3 rounded-xl border flex items-start gap-2.5 text-xs shadow-sm ${
+                strikes >= 3
+                  ? 'bg-rose-950/40 border-rose-500/40 text-rose-200'
+                  : strikes === 2
+                  ? 'bg-amber-950/40 border-amber-500/50 text-amber-200'
+                  : 'bg-amber-950/30 border-amber-500/30 text-amber-300'
+              }`}
+            >
+              <AlertCircle className={`w-4 h-4 shrink-0 mt-0.5 ${strikes >= 3 ? 'text-rose-400' : 'text-amber-400'}`} />
+              <div className="flex-1">
+                <p className="font-semibold text-[11px] uppercase tracking-wide">
+                  {strikes >= 3
+                    ? 'Interview Terminated — Exceeded Conduct Limit'
+                    : `Conduct Warning: Strike ${strikes} of 2`}
+                </p>
+                <p className="text-[11px] opacity-90 mt-0.5 leading-snug">
+                  {strikes >= 3
+                    ? 'Session was terminated due to repeated off-topic remarks. Score recorded as 0/100 (Strong No Hire).'
+                    : strikes === 2
+                    ? 'Final warning! Talking off-topic, deflecting, or asking the AI questions again will automatically terminate the interview with an immediate score of 0/100.'
+                    : 'Please keep your responses strictly technical. Deviating off-topic more than 2 times automatically terminates the interview with a score of 0.'}
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Chat Log */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">

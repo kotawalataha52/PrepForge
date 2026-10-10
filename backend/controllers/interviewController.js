@@ -56,7 +56,7 @@ exports.uploadResume = async (req, res) => {
 // @access  Private
 exports.finishInterview = async (req, res) => {
   try {
-    const { transcript, role, mockId } = req.body;
+    const { transcript, role, mockId, isTerminated } = req.body;
 
     if (!transcript || transcript.length === 0) {
       return res.status(400).json({ success: false, message: 'No interview transcript provided.' });
@@ -65,7 +65,30 @@ exports.finishInterview = async (req, res) => {
     // Convert the array of { sender, text } into a formatted transcript
     const formattedTranscript = transcript.map(t => `${t.sender.toUpperCase()}: ${t.text}`).join('\n');
 
-    const evaluation = await gradeInterviewTranscript(role, formattedTranscript);
+    let evaluation;
+    // Check if interview was terminated due to off-topic / trolling conduct (>2 strikes)
+    const hasTerminationMarker = isTerminated || transcript.some(t => t.text && t.text.includes('INTERVIEW TERMINATED - STRIKE 3'));
+
+    if (hasTerminationMarker) {
+      evaluation = {
+        score: 0,
+        feedback: "Interview automatically terminated: The candidate repeatedly deviated from the technical challenges and engaged in off-topic discussion (exceeded the maximum 2-strike conduct limit). Recommendation: Strong No Hire (Score: 0/100).",
+        strengths: ["None demonstrated"],
+        improvements: [
+          "Maintain professional conduct during technical interviews",
+          "Focus on addressing technical challenges directly",
+          "Demonstrate core Computer Science and problem-solving competence"
+        ],
+        rubricBreakdown: {
+          technicalAccuracy: 0,
+          problemSolving: 0,
+          communication: 0,
+          codeEfficiency: 0
+        }
+      };
+    } else {
+      evaluation = await gradeInterviewTranscript(role, formattedTranscript);
+    }
 
     // Save permanently to Database
     const newInterview = await Interview.create({

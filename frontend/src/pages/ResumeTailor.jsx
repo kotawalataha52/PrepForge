@@ -304,47 +304,56 @@ const ResumeTailor = () => {
   };
 
   const handleDownloadPDF = async () => {
-    if (!resumeSheetRef.current) return;
+    const sourceSheet = resumeSheetRef.current;
+    if (!sourceSheet) return;
     setIsDownloadingPdf(true);
 
-    try {
-      const element = resumeSheetRef.current;
+    // Timeout safety guard so button never gets stuck loading
+    const safetyTimer = setTimeout(() => {
+      setIsDownloadingPdf(false);
+      window.print();
+    }, 8000);
 
-      // Render high-fidelity canvas with normalized desktop dimensions to prevent text compression
-      const canvas = await html2canvas(element, {
-        scale: 2, // High resolution (2x DPI)
+    let clone = null;
+    try {
+      // Create an isolated, fixed-dimension clone for instant, high-fidelity capture
+      clone = sourceSheet.cloneNode(true);
+      clone.id = 'resume-export-clone';
+      clone.style.width = '794px'; // Standard A4 width in px at 96 DPI
+      clone.style.minWidth = '794px';
+      clone.style.maxWidth = '794px';
+      clone.style.boxSizing = 'border-box';
+      clone.style.padding = '36px 44px';
+      clone.style.position = 'fixed';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      clone.style.zIndex = '-9999';
+      clone.style.background = '#ffffff';
+      clone.style.color = '#111827';
+      clone.style.boxShadow = 'none';
+      clone.style.borderRadius = '0';
+      clone.style.border = 'none';
+      clone.style.letterSpacing = 'normal';
+      clone.style.wordSpacing = 'normal';
+
+      // Fix any text justification that can cause character stretching
+      const textNodes = clone.querySelectorAll('p, span, h1, h2, h3, div, li');
+      textNodes.forEach((node) => {
+        node.style.letterSpacing = 'normal';
+        node.style.wordSpacing = 'normal';
+        if (node.classList.contains('text-justify')) {
+          node.classList.remove('text-justify');
+          node.style.textAlign = 'left';
+        }
+      });
+
+      document.body.appendChild(clone);
+
+      const canvas = await html2canvas(clone, {
+        scale: 2, // High resolution (sharp text)
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff',
-        windowWidth: 1280,
-        onclone: (clonedDoc) => {
-          const sheet = clonedDoc.getElementById('resume-preview-sheet');
-          if (sheet) {
-            sheet.style.width = '794px';
-            sheet.style.minWidth = '794px';
-            sheet.style.maxWidth = '794px';
-            sheet.style.boxSizing = 'border-box';
-            sheet.style.padding = '36px 44px';
-            sheet.style.margin = '0';
-            sheet.style.boxShadow = 'none';
-            sheet.style.borderRadius = '0';
-            sheet.style.border = 'none';
-            sheet.style.letterSpacing = '0px';
-            sheet.style.wordSpacing = '0px';
-            sheet.style.transform = 'none';
-
-            // Normalize fonts and avoid text-justify compression
-            const allElements = sheet.querySelectorAll('p, span, h1, h2, h3, div, li');
-            allElements.forEach((el) => {
-              el.style.letterSpacing = 'normal';
-              el.style.wordSpacing = 'normal';
-              if (el.classList.contains('text-justify')) {
-                el.classList.remove('text-justify');
-                el.style.textAlign = 'left';
-              }
-            });
-          }
-        }
+        backgroundColor: '#ffffff'
       });
 
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -352,12 +361,12 @@ const ResumeTailor = () => {
       const pageHeight = 297;
       const ratio = canvas.height / canvas.width;
 
-      // Standard A4 aspect ratio is ~1.414. If within 1-page threshold, fit cleanly without split lines
+      // Single-page fit if within ~A4 threshold
       if (ratio <= 1.48) {
         const imgData = canvas.toDataURL('image/png');
-        pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+        pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
       } else {
-        // Multi-page slicing using dedicated canvas slices to preserve line formatting
+        // Multi-page clean canvas slicing
         const pageCanvas = document.createElement('canvas');
         const pageCtx = pageCanvas.getContext('2d');
         const pageCanvasHeight = Math.floor(canvas.width * (pageHeight / pageWidth));
@@ -390,7 +399,7 @@ const ResumeTailor = () => {
           );
 
           const pageData = pageCanvas.toDataURL('image/png');
-          pdf.addImage(pageData, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+          pdf.addImage(pageData, 'PNG', 0, 0, pageWidth, pageHeight);
 
           currentY += pageCanvasHeight;
           pageIndex++;
@@ -399,11 +408,17 @@ const ResumeTailor = () => {
 
       const fileName = `${resumeData?.personalInfo?.fullName?.replace(/\s+/g, '_') || 'Tailored'}_Resume.pdf`;
       pdf.save(fileName);
+      clearTimeout(safetyTimer);
     } catch (err) {
       console.error('PDF export error:', err);
+      clearTimeout(safetyTimer);
       window.print();
     } finally {
+      if (clone && clone.parentNode) {
+        clone.parentNode.removeChild(clone);
+      }
       setIsDownloadingPdf(false);
+      clearTimeout(safetyTimer);
     }
   };
 
