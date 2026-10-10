@@ -86,6 +86,13 @@
 
 /* Resume PDF Print Stylesheet */
 @media print {
+  @page {
+    size: A4;
+    margin: 12mm 15mm;
+  }
+  body {
+    background: #ffffff !important;
+  }
   body * {
     visibility: hidden;
   }
@@ -104,6 +111,7 @@
     color: #111827 !important;
     box-shadow: none !important;
     border: none !important;
+    letter-spacing: normal !important;
   }
 }
 

@@ -127,7 +127,16 @@ async function getInterviewBotResponse(userMessage, systemContext, isFirstMessag
     const systemPrompt = `You are an elite Senior Principal Technical Bar-Raiser at top tech companies (Google, Meta, Microsoft, Amazon).
 You conduct highly rigorous, realistic technical interviews that balance:
 
-1. DIVERSE DSA & PROBLEM SOLVING (Broad Pattern Rotation):
+1. CRITICAL PROFESSIONAL BOUNDARIES & INTERVIEWER AUTHORITY:
+   - You are the INTERVIEWER leading a high-stakes, time-constrained technical evaluation. You are NOT an open-ended conversational chatbot, buddy, or general assistant.
+   - If the candidate acts uninterested, claims they "have other interests", messes around, makes jokes, talks off-topic (movies, hobbies, sports, random life chit-chat), or tries to flip the interview by asking YOU personal or trivia questions:
+     * DO NOT answer their off-topic questions.
+     * DO NOT engage in casual chit-chat, humor, or side conversations.
+     * FIRMLY and professionally reject the diversion and redirect them back to the interview immediately.
+     * Example redirection: "This is a formal technical interview. We have limited time to assess your engineering competencies, so let's keep our focus on the technical problem at hand: [Restate technical question]."
+     * If they persistently refuse to solve problems or continue to troll, firmly state: "As the interviewer, my evaluation depends entirely on your technical solutions and problem-solving skills. If you decline to address this problem, I will have to record that and conclude the interview."
+
+2. DIVERSE DSA & PROBLEM SOLVING (Broad Pattern Rotation):
    - Binary Trees & BSTs (e.g. Lowest Common Ancestor, Tree Path Sum, Validate BST, Level Order)
    - Graphs, BFS/DFS & Topo Sort (e.g. Number of Islands, Course Schedule, Clone Graph, Word Ladder)
    - Dynamic Programming & Memoization (e.g. Coin Change, Longest Increasing Subsequence, House Robber, Word Break)
@@ -137,29 +146,29 @@ You conduct highly rigorous, realistic technical interviews that balance:
    - Priority Queues & Heaps (e.g. Kth Largest Element, Merge K Sorted Lists, Task Scheduler)
    - SQL & Relational Queries (e.g. Window Functions, Nth Highest Salary, Self Joins, Subqueries)
 
-2. COMPUTER SCIENCE CORE FUNDAMENTALS:
+3. COMPUTER SCIENCE CORE FUNDAMENTALS:
    - Operating Systems: Process vs Thread, Virtual Memory & Paging, Deadlocks & Semaphores, Context Switching, CPU Scheduling.
    - DBMS: B-Trees vs LSM Trees vs Hash Indexes, ACID properties, Transaction Isolation levels, Sharding, Replication & Normalization.
    - Computer Networks: TCP 3-Way Handshake vs UDP, HTTPS/TLS Handshake, WebSockets, DNS Resolution flow, Load Balancing (L4 vs L7).
    - System Design & Architecture: Caching strategies (Redis/Memcached, Cache-Aside vs Write-Through), Concurrency, Microservices tradeoffs.
 
-3. CANDIDATE RESUME CONTEXT:
+4. CANDIDATE RESUME CONTEXT:
 ${systemContext}
 
 INTERVIEW PROGRESSION & NO-REPEAT RULES:
 - CRITICAL: NEVER repeat or re-ask a problem, question, or topic already asked in the conversation history below. Each question MUST test a fresh concept or distinct algorithm pattern.
-- Turn 1: Greet the candidate and ask a focused system architecture question from their resume background.
+- Turn 1: Greet the candidate professionally and ask a focused system architecture question from their resume background.
 - Turn 2-3: Transition into a deep Computer Science Core question (OS, DBMS, or Networks) relevant to software engineering.
 - Turn 4+: Challenge them with a distinct DSA problem or SQL scenario, inviting them to write and submit their solution in the Live Code Editor.
 - When evaluating candidate code submissions ([CODE_SUBMISSION:...]):
   * Rigorously evaluate algorithmic correctness and edge cases.
   * State the exact Time and Space Complexity (e.g. O(N) time, O(1) auxiliary space).
   * Give 2-3 sentences of constructive feedback and either present an optimization challenge or rotate to the next technical topic.
-- Format: Keep total response to 2-4 complete sentences max so the interview stays interactive and fast-paced. Always end with a direct question.`;
+- Format: Keep total response to 2-3 complete sentences max. Maintain an authoritative Bar-Raiser tone and always end with a direct question or prompt.`;
 
     let prompt = "";
     if (isFirstMessage) {
-      prompt = `Start the technical mock interview session. Welcome the candidate, state the scope (System Experience, CS Core Fundamentals, and Algorithmic Problem Solving), and ask your first focused question based on their resume background.`;
+      prompt = `Start the technical mock interview session. Welcome the candidate briefly, establish the structured technical scope, and ask your first focused question based on their resume background.`;
     } else if (userMessage.includes("[CODE_SUBMISSION")) {
       prompt = `SESSION HISTORY:
 ${formattedHistory}
@@ -173,17 +182,24 @@ Analyze their code carefully for correctness, edge cases, and Big-O Time & Space
       prompt = `SESSION HISTORY SO FAR:
 ${formattedHistory}
 
-LATEST CANDIDATE RESPONSE:
+LATEST CANDIDATE MESSAGE:
 "${userMessage}"
 
-Interview Turn #${messageCount}. Evaluate their response. Transition to the next technical topic (rotate between CS Core Fundamentals: OS/DBMS/Networks, or pick a FRESH DSA coding pattern that has NOT been asked yet in this session). Keep your response concise (2-4 sentences), complete, and end with a clear direct question.`;
+Interview Turn #${messageCount}.
+CRITICAL INSTRUCTION:
+Check if the candidate's latest message is relevant to the technical question.
+- IF THE CANDIDATE IS DEFLECTING, TROLLING, ASKING OFF-TOPIC QUESTIONS, EXPRESSING DISINTEREST, OR SPEAKING OUT OF CONTEXT:
+  DO NOT answer their off-topic question or engage with their topic. Firmly reject the distraction, remind them that their technical competency is on the clock, and redirect them back to the technical question.
+- IF THE CANDIDATE IS ANSWERING THE TECHNICAL QUESTION:
+  Evaluate their technical response in 1 sentence and advance to the next technical topic (OS/DBMS/Networks or fresh DSA problem).
+Keep response to 2-3 sentences max and end with a clear direct prompt.`;
     }
 
     const reply = await callGemini({
       prompt,
       systemInstruction: systemPrompt,
-      temperature: 0.7,
-      maxOutputTokens: 800,
+      temperature: 0.5,
+      maxOutputTokens: 600,
       timeoutMs: 18000
     });
 
@@ -191,10 +207,15 @@ Interview Turn #${messageCount}. Evaluate their response. Transition to the next
   } catch (err) {
     console.warn('[Gemini Interview Bot Fallback]:', err.message);
     if (isFirstMessage) {
-      return "Welcome to your technical mock interview. We'll be covering system engineering from your resume, Computer Science fundamentals (OS, DBMS, Networks), and DSA problem solving. To begin, could you walk me through the architecture and key tradeoffs of your most challenging project?";
+      return "Welcome to your technical mock interview. We have a set agenda covering system engineering from your resume, Computer Science fundamentals (OS, DBMS, Networks), and live algorithmic problem solving. To begin, could you walk me through the architecture and key tradeoffs of your most challenging project?";
     } else if (userMessage.includes("[CODE_SUBMISSION")) {
       return "I've reviewed your submitted solution. The logic is clean and handles the primary cases well. What is the worst-case Time and Space complexity of your approach, and how would you optimize it if memory was constrained to O(1) auxiliary space?";
     } else {
+      const isDeflecting = /not interested|other interests|joke|movie|weather|who are you|how are you|mess around/i.test(userMessage);
+      if (isDeflecting) {
+        return "This is a formal technical interview with limited time. Let's stay focused on your technical competencies. Could you address the previous engineering question or describe how you would approach implementing the solution?";
+      }
+
       const fallbackQuestions = [
         "That's a solid explanation. Let's look at binary tree algorithms: How would you determine the Lowest Common Ancestor (LCA) of two given nodes in a Binary Search Tree versus a generic Binary Tree?",
         "Good points. In distributed systems, how does database indexing using B+ Trees compare to Hash-based indexes for range queries versus point lookups?",
@@ -213,45 +234,74 @@ Interview Turn #${messageCount}. Evaluate their response. Transition to the next
  * Supports both (transcript, role) and (role, transcript) argument orders
  */
 async function generateInterviewFeedback(arg1, arg2) {
+  let transcript = arg1;
+  let role = "Software Engineer";
+
+  if (typeof arg1 === 'string' && (Array.isArray(arg2) || typeof arg2 === 'string')) {
+    role = arg1;
+    transcript = arg2;
+  } else if (typeof arg2 === 'string') {
+    role = arg2;
+  }
+
+  let formattedTranscript = '';
+  let candidateTexts = '';
+  let codeSubmissionsCount = 0;
+  let candidateTurnsCount = 0;
+
+  if (Array.isArray(transcript)) {
+    formattedTranscript = transcript
+      .map(t => {
+        const isBot = (t.sender === 'bot' || t.sender === 'BOT' || t.sender === 'ai');
+        if (!isBot) {
+          candidateTurnsCount++;
+          candidateTexts += ` ${t.text || ''}`;
+          if (t.isCode || (t.text && (t.text.includes('[CODE_SUBMISSION') || t.text.includes('function') || t.text.includes('def ')))) {
+            codeSubmissionsCount++;
+          }
+        }
+        return `${isBot ? 'Interviewer' : 'Candidate'}: ${t.text || ''}`;
+      })
+      .join('\n\n');
+  } else if (typeof transcript === 'string') {
+    formattedTranscript = transcript;
+    candidateTexts = transcript;
+  }
+
+  // Pre-audit: detect off-topic trolling, disinterest, or zero technical effort
+  const hasOffTopicPatterns = /not interested|other interests|mess around|joke|movie|who are you|hobbies|waste time|boring|idc/i.test(candidateTexts);
+  const totalCandidateWords = candidateTexts.trim().split(/\s+/).filter(Boolean).length;
+  const hasTechnicalKeywords = /algorithm|complexity|time|space|O\(|tree|graph|hash|table|array|index|database|query|cache|thread|process|memory|network|api|server|microservice|latency/i.test(candidateTexts);
+
+  // If candidate texted excessively but with virtually no technical content
+  const isTrollingOrChattyNonTechnical = hasOffTopicPatterns || (candidateTurnsCount >= 2 && !hasTechnicalKeywords && codeSubmissionsCount === 0);
+
   try {
-    let transcript = arg1;
-    let role = "Software Engineer";
-
-    if (typeof arg1 === 'string' && (Array.isArray(arg2) || typeof arg2 === 'string')) {
-      role = arg1;
-      transcript = arg2;
-    } else if (typeof arg2 === 'string') {
-      role = arg2;
-    }
-
-    let formattedTranscript = '';
-    if (Array.isArray(transcript)) {
-      formattedTranscript = transcript
-        .map(t => `${(t.sender === 'bot' || t.sender === 'BOT') ? 'Interviewer' : 'Candidate'}: ${t.text || ''}`)
-        .join('\n\n');
-    } else if (typeof transcript === 'string') {
-      formattedTranscript = transcript;
-    }
-
-    const prompt = `You are a Principal Bar-Raiser at a Tier-1 tech company evaluating a completed technical interview for a "${role}" position.
+    const prompt = `You are a Principal Bar-Raiser at a Tier-1 tech company conducting a formal post-interview evaluation for a "${role}" position.
 
 FULL INTERVIEW TRANSCRIPT:
 ----------------------------------------
 ${formattedTranscript}
 ----------------------------------------
 
-Evaluate the candidate's performance across 4 dimensions:
-1. Technical Depth & Domain Expertise (Resume & Frameworks)
-2. Computer Science Core Fundamentals (OS, DBMS, Networks, Architecture)
-3. Algorithmic Problem Solving & Code Quality (Correctness, Complexity, Edge cases)
-4. Communication Clarity & Engineering Tradeoffs
+CRITICAL BAR-RAISER EVALUATION DIRECTIVES:
+1. STRICT ANTI-SYCOPHANCY RULE:
+   - DO NOT AWARD POINTS FOR TEXT VOLUME OR HIGH MESSAGE COUNT.
+   - If a candidate typed a lot of text, but the text was off-topic, playful, evasive, complaining of disinterest, joking, or asking the interviewer casual questions, THEY MUST BE GIVEN A FAILING GRADE.
+2. DISINTEREST & DEFLECTION PENALTY:
+   - If the candidate stated disinterest (e.g. "not interested", "have other interests"), talked off-topic, evaded the technical questions, or failed to submit code:
+     * OVERALL SCORE MUST BE BETWEEN 10 AND 30 (Strong No Hire).
+     * The feedback MUST explicitly state: "The candidate was evasive, disengaged, and failed to provide technical solutions to the interview challenges. Recommendation: Strong No Hire."
+     * Problem Solving and Code Efficiency rubric scores MUST be <= 20.
+3. LEGITIMATE TECHNICAL GRADING:
+   - Only award passing scores (70+) to candidates who directly answered the technical questions with sound engineering reasoning, correct algorithms, and accurate Big-O analysis.
 
 Output ONLY a valid JSON object matching this schema:
 {
-  "score": <overall integer score from 0 to 100>,
-  "feedback": "<Detailed 3-5 sentence breakdown highlighting key technical strengths, areas for improvement, and algorithmic precision observed in this session>",
-  "strengths": ["<strength 1>", "<strength 2>", "<strength 3>"],
-  "improvements": ["<improvement 1>", "<improvement 2>", "<improvement 3>"],
+  "score": <integer from 0 to 100 based strictly on verified technical competency and professional engagement>,
+  "feedback": "<Objective, rigorous 2-4 sentence assessment highlighting technical performance and hiring recommendation>",
+  "strengths": ["<genuine technical strength, or 'None demonstrated' if uncooperative>"],
+  "improvements": ["<critical technical or professional improvement area>"],
   "rubricBreakdown": {
     "technicalAccuracy": <integer 0-100>,
     "problemSolving": <integer 0-100>,
@@ -263,28 +313,67 @@ Output ONLY a valid JSON object matching this schema:
     const responseText = await callGemini({
       prompt,
       responseJson: true,
-      temperature: 0.3,
-      maxOutputTokens: 1200
+      temperature: 0.2,
+      maxOutputTokens: 1000
     });
 
-    const parsed = extractJsonFromText(responseText);
+    let parsed = extractJsonFromText(responseText);
+
+    // Hard safety guardrail: If candidate was clearly off-topic or trolling, enforce strict failing ceiling
+    if (isTrollingOrChattyNonTechnical) {
+      const cappedScore = Math.min(parsed?.score || 25, 30);
+      return {
+        score: cappedScore,
+        feedback: parsed?.feedback && parsed.feedback.toLowerCase().includes('no hire')
+          ? parsed.feedback
+          : "The candidate was disengaged, spoke off-topic, and failed to address the technical problems presented during the session. Recommendation: Strong No Hire.",
+        strengths: ["Attended interview session"],
+        improvements: [
+          "Remain engaged and focused on technical problems",
+          "Demonstrate core Computer Science and algorithmic knowledge",
+          "Address the interviewer's specific challenges directly"
+        ],
+        rubricBreakdown: {
+          technicalAccuracy: Math.min(parsed?.rubricBreakdown?.technicalAccuracy || 20, 25),
+          problemSolving: Math.min(parsed?.rubricBreakdown?.problemSolving || 15, 20),
+          communication: Math.min(parsed?.rubricBreakdown?.communication || 30, 35),
+          codeEfficiency: Math.min(parsed?.rubricBreakdown?.codeEfficiency || 10, 15)
+        }
+      };
+    }
+
     return {
-      score: parsed?.score || 75,
-      feedback: parsed?.feedback || "The candidate demonstrated solid technical knowledge and problem-solving capability throughout the interview.",
-      strengths: parsed?.strengths || ["Clean problem-solving", "Good communication"],
-      improvements: parsed?.improvements || ["Handle more edge cases", "Elaborate deeper on memory tradeoffs"],
+      score: parsed?.score || 65,
+      feedback: parsed?.feedback || "The candidate participated in the technical interview. Review the transcript for detailed technical breakdown.",
+      strengths: parsed?.strengths || ["Participated in dialogue"],
+      improvements: parsed?.improvements || ["Deepen algorithmic optimization and edge case handling"],
       rubricBreakdown: parsed?.rubricBreakdown || {
-        technicalAccuracy: parsed?.score || 75,
-        problemSolving: parsed?.score || 75,
-        communication: 80,
-        codeEfficiency: parsed?.score || 70
+        technicalAccuracy: parsed?.score || 65,
+        problemSolving: parsed?.score || 60,
+        communication: 70,
+        codeEfficiency: parsed?.score || 60
       }
     };
   } catch (err) {
     console.error('Feedback generation error:', err);
+    if (isTrollingOrChattyNonTechnical) {
+      return {
+        score: 20,
+        feedback: "The candidate was disengaged and off-topic throughout the interview, failing to provide substantive technical solutions. Recommendation: Strong No Hire.",
+        strengths: ["None demonstrated"],
+        improvements: ["Focus on addressing technical challenges directly", "Demonstrate required CS and coding fundamentals"],
+        rubricBreakdown: {
+          technicalAccuracy: 15,
+          problemSolving: 15,
+          communication: 25,
+          codeEfficiency: 10
+        }
+      };
+    }
+
     return {
-      score: 72,
-      feedback: "The candidate communicated clearly and demonstrated solid technical understanding across the interview topics.",
+      score: 65,
+      feedback: "The candidate communicated and attempted the technical topics during the interview session.",
       strengths: ["Clear communication", "Structured approach"],
       improvements: ["Provide deeper algorithmic complexity analysis", "Consider additional edge cases"]
     };

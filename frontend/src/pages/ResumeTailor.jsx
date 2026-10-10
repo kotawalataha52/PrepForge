@@ -309,30 +309,92 @@ const ResumeTailor = () => {
 
     try {
       const element = resumeSheetRef.current;
+
+      // Render high-fidelity canvas with normalized desktop dimensions to prevent text compression
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 2, // High resolution (2x DPI)
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        windowWidth: 1280,
+        onclone: (clonedDoc) => {
+          const sheet = clonedDoc.getElementById('resume-preview-sheet');
+          if (sheet) {
+            sheet.style.width = '794px';
+            sheet.style.minWidth = '794px';
+            sheet.style.maxWidth = '794px';
+            sheet.style.boxSizing = 'border-box';
+            sheet.style.padding = '36px 44px';
+            sheet.style.margin = '0';
+            sheet.style.boxShadow = 'none';
+            sheet.style.borderRadius = '0';
+            sheet.style.border = 'none';
+            sheet.style.letterSpacing = '0px';
+            sheet.style.wordSpacing = '0px';
+            sheet.style.transform = 'none';
+
+            // Normalize fonts and avoid text-justify compression
+            const allElements = sheet.querySelectorAll('p, span, h1, h2, h3, div, li');
+            allElements.forEach((el) => {
+              el.style.letterSpacing = 'normal';
+              el.style.wordSpacing = 'normal';
+              if (el.classList.contains('text-justify')) {
+                el.classList.remove('text-justify');
+                el.style.textAlign = 'left';
+              }
+            });
+          }
+        }
       });
 
-      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 210;
+      const pageWidth = 210;
       const pageHeight = 297;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const ratio = canvas.height / canvas.width;
 
-      let heightLeft = imgHeight;
-      let position = 0;
+      // Standard A4 aspect ratio is ~1.414. If within 1-page threshold, fit cleanly without split lines
+      if (ratio <= 1.48) {
+        const imgData = canvas.toDataURL('image/png');
+        pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+      } else {
+        // Multi-page slicing using dedicated canvas slices to preserve line formatting
+        const pageCanvas = document.createElement('canvas');
+        const pageCtx = pageCanvas.getContext('2d');
+        const pageCanvasHeight = Math.floor(canvas.width * (pageHeight / pageWidth));
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = pageCanvasHeight;
 
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+        let totalHeight = canvas.height;
+        let currentY = 0;
+        let pageIndex = 0;
 
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+        while (currentY < totalHeight) {
+          if (pageIndex > 0) {
+            pdf.addPage();
+          }
+
+          pageCtx.fillStyle = '#ffffff';
+          pageCtx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+
+          const sliceHeight = Math.min(pageCanvasHeight, totalHeight - currentY);
+          pageCtx.drawImage(
+            canvas,
+            0,
+            currentY,
+            canvas.width,
+            sliceHeight,
+            0,
+            0,
+            canvas.width,
+            sliceHeight
+          );
+
+          const pageData = pageCanvas.toDataURL('image/png');
+          pdf.addImage(pageData, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+
+          currentY += pageCanvasHeight;
+          pageIndex++;
+        }
       }
 
       const fileName = `${resumeData?.personalInfo?.fullName?.replace(/\s+/g, '_') || 'Tailored'}_Resume.pdf`;
@@ -1302,7 +1364,7 @@ const ResumeTailor = () => {
                       <h2 className="text-[11px] font-bold uppercase tracking-wider text-gray-900 border-b border-gray-300 pb-0.5 mb-1.5 font-display">
                         Professional Summary
                       </h2>
-                      <p className="text-gray-800 text-justify leading-relaxed">
+                      <p className="text-gray-800 text-left leading-relaxed">
                         {resumeData.summary}
                       </p>
                     </div>

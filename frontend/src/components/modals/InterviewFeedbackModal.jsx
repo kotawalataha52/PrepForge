@@ -91,11 +91,13 @@ const InterviewFeedbackModal = ({ isOpen, feedbackData, onClose }) => {
                       {score}<span className="text-lg text-slate-400 font-normal">/100</span>
                     </div>
                     <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
-                      isGoodScore 
-                        ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
-                        : 'bg-amber-100 text-amber-700 border border-amber-200'
+                      score >= 70
+                        ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                        : score >= 45
+                        ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                        : 'bg-rose-100 text-rose-700 border border-rose-200'
                     }`}>
-                      {isGoodScore ? 'Strong Performance' : 'Needs Practice'}
+                      {score >= 70 ? 'Strong Performance' : score >= 45 ? 'Needs Practice' : 'Unsatisfactory • No Hire'}
                     </span>
                   </div>
                   <div className="text-xs text-slate-500 sm:border-l sm:border-slate-200 sm:pl-5 flex-1">
@@ -120,7 +122,7 @@ const InterviewFeedbackModal = ({ isOpen, feedbackData, onClose }) => {
                   <p className="text-xs text-slate-400 text-center py-8">No transcript recorded for this session.</p>
                 ) : (
                   feedbackData.transcript.map((item, idx) => {
-                    const isAi = item.sender === 'ai';
+                    const isAi = item.sender === 'ai' || item.sender === 'bot' || item.sender === 'BOT';
                     return (
                       <div
                         key={idx}
